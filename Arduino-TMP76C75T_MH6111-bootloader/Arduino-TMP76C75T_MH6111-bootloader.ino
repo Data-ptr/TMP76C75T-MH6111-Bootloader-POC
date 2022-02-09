@@ -11,6 +11,8 @@
 */
 #include <SoftwareSerial.h>
 
+#define RST_PIN 9
+
 SoftwareSerial mySerial(10, 11); // RX, TX
 
 unsigned char readyChk[5] = {0, 0, 0, 0, 0};
@@ -19,6 +21,9 @@ unsigned char readyBytes[5] = {'R', 'E', 'A', 'D', 'Y'};
 bool isReady = false;
 
 void setup() {
+  pinMode(RST_PIN, OUTPUT);
+  digitalWrite(RST_PIN, HIGH);
+  
   // Open serial communications and wait for port to open:
   Serial.begin(57600);
 
@@ -29,6 +34,9 @@ void setup() {
   Serial.println("ReAdY!");
 
   mySerial.begin(15625); //"Weird"  76C75T speed
+
+  delay(1000); //Give USB serial time to connect
+  resetMpu();
 }
 
 //Waits for "READY" over rx then dumps code over tx
@@ -61,9 +69,9 @@ void writeCode() {
   char data[17] = {
     0xCC,
     0x00, //divisor hi
-    0x00, //divisor lo
+    0xFF, //divisor lo
     0x15,
-    0x00, //dividen
+    0x02, //dividen
     0xBD,
     0x80,
     0x54,
@@ -84,4 +92,10 @@ void writeCode() {
     delay(10);
     mySerial.write(data[i]);
   }
+}
+
+void resetMpu() {
+  digitalWrite(RST_PIN, LOW);
+  delay(100);  //Hold RST LOW for 100ms
+  digitalWrite(RST_PIN, HIGH);
 }
