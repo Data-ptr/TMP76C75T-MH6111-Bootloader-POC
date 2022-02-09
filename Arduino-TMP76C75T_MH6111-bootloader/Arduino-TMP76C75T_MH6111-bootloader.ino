@@ -37,7 +37,8 @@ void loop() {
     char readByte = mySerial.read();
 
     if(isReady) {
-      Serial.print(readByte);
+      String str = String((uint8_t)readByte, HEX);
+      Serial.println("0x" + str + "(" + readByte + ")");
     }
 
     if(!isReady) {
@@ -57,20 +58,29 @@ void loop() {
 
 //Writes the code to serial to be stored in RAM to be run
 void writeCode() {
-  char data[8] = {
-    0x00CC,   //ldd
-    0x0080,
-    0x0000,   //address of HELLO STR  (bottom of ROM)
-    0x00BD,   //jsr
-    0x0080,
-    0x0068,   //address of PSTR subroutine
-    0x0039,   //rts
-    0x00F0
+  char data[17] = {
+    0xCC,
+    0x00, //divisor hi
+    0x00, //divisor lo
+    0x15,
+    0x00, //dividen
+    0xBD,
+    0x80,
+    0x54,
+    0x17,
+    0xBD,
+    0x80,
+    0x54,
+    0x07,
+    0xBD,
+    0x80,
+    0x54,
+    0xF0
   };
 
   delay(10);
 
-  for(int i = 0; i < 8; i++) {
+  for(int i = 0; i < 17; i++) {
     delay(10);
     mySerial.write(data[i]);
   }

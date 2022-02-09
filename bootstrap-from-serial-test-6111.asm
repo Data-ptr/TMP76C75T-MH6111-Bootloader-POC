@@ -28,8 +28,6 @@ STACK               .equ    $01BF       ;The top of RAM
 ;
 ;ROM
 start               .equ    $8000       ;start address of the external rom
-;
-;
                     .org    start
 :
 ; Strings
