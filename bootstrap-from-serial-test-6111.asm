@@ -3,9 +3,9 @@
 ; 9th Feb 2022
 ;
 ; XTAL = 12MHz, E = 12MHz/6 = 2MHz
-; Baud rate = 2Mhz/4096 = 488 Baud (Nice and slow)
-; Baud rate = 2Mhz/128 = 15,625 Baud
-; Baud rate = 2Mhz/16 = 125,000 Baud (Holy smokes!)
+; 0x07: Baud rate = 2Mhz/4096 = 488 Baud (Nice and slow)
+; 0x05: Baud rate = 2Mhz/128 = 15,625 Baud
+; 0x04: Baud rate = 2Mhz/16 = 125,000 Baud (Holy smokes!)
 ;
 ; Run in Mode 2, Multiplexed/RAM/No ROM, P20: L, P21: H, P22: L
 ;
@@ -44,7 +44,7 @@ ENTRYPOINT          lds     #STACK        ;setup the stack pointer
                     ldaa    #$C0          ;to RAM enable
                     staa    ram_ctrl      ;enable RAM
 ;
-                    ldaa    #$05          ;baud = E/16, async ;0x07 = baud = E/4096, async
+                    ldaa    #$07          ;
                     staa    SCI_BAUD
                     ldaa    #$0A          ;set acc. A to TE (Transmit Enable) and RE (Recieve Enable) bit in SCI_SCR
                     staa    SCI_SCR       ;enable transmitter and reciever
@@ -59,7 +59,7 @@ COPY                jsr     RCHAR         ;Load acc. A with code
                     staa    $00,x         ;Store acc. A into RAM code
                     inx
                     staa    $00,x         ;Peek for end of instruction marker
-                    cmpa    #$F0
+                    cmpa    #$FF
                     bne     COPY
 ;
                     ldd     #$0000

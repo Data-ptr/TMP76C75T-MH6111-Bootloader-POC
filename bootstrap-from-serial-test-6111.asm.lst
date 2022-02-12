@@ -3,9 +3,9 @@
 0003   0000             ; 9th Feb 2022
 0004   0000             ;
 0005   0000             ; XTAL = 12MHz, E = 12MHz/6 = 2MHz
-0006   0000             ; Baud rate = 2Mhz/4096 = 488 Baud (Nice and slow)
-0007   0000             ; Baud rate = 2Mhz/128 = 15,625 Baud
-0008   0000             ; Baud rate = 2Mhz/16 = 125,000 Baud (Holy smokes!)
+0006   0000             ; 0x07: Baud rate = 2Mhz/4096 = 488 Baud (Nice and slow)
+0007   0000             ; 0x05: Baud rate = 2Mhz/128 = 15,625 Baud
+0008   0000             ; 0x04: Baud rate = 2Mhz/16 = 125,000 Baud (Holy smokes!)
 0009   0000             ;
 0010   0000             ; Run in Mode 2, Multiplexed/RAM/No ROM, P20: L, P21: H, P22: L
 0011   0000             ;
@@ -28,122 +28,120 @@
 0028   0000             ;
 0029   0000             ;ROM
 0030   0000             start               .equ    $8000       ;start address of the external rom
-0031   0000             ;
-0032   0000             ;
-0033   8000                                 .org    start
-0034   8000             :
-0035   8000             ; Strings
-0036   8000 0A 4A 41 4E HELLOSTR            .text   "\nJANE HACKER 2022 <3\n"
-0036   8004 45 20 48 41 
-0036   8008 43 4B 45 52 
-0036   800C 20 32 30 32 
-0036   8010 32 20 3C 33 
-0036   8014 0A 
-0037   8015 00                              .byte   $00
-0038   8016 52 45 41 44 READYSTR            .text   "READY"
-0038   801A 59 
-0039   801B 00                              .byte   $00
-0040   801C 44 4F 4E 45 DONESTR             .text   "DONE"
-0041   8020 00                              .byte   $00
-0042   8021             ;
-0043   8021             ;Code
-0044   8021 8E 01 BF    ENTRYPOINT          lds     #STACK        ;setup the stack pointer
-0045   8024             ;
-0046   8024 86 C0                           ldaa    #$C0          ;to RAM enable
-0047   8026 97 14                           staa    ram_ctrl      ;enable RAM
-0048   8028             ;
-0049   8028 86 05                           ldaa    #$05          ;baud = E/16, async ;0x07 = baud = E/4096, async
-0050   802A 97 10                           staa    SCI_BAUD
-0051   802C 86 0A                           ldaa    #$0A          ;set acc. A to TE (Transmit Enable) and RE (Recieve Enable) bit in SCI_SCR
-0052   802E 97 11                           staa    SCI_SCR       ;enable transmitter and reciever
-0053   8030             ;
-0054   8030 4F                              clra                  ;Clear acc. A
-0055   8031             ;
-0056   8031 CE 00 57    COPYINIT            ldx     #RAM_CODE     ;Put start addr. of code in RAM into X
-0057   8034             ;
-0058   8034 BD 80 7B                        jsr     PREADY        ;Print "READY" to serial
-0059   8037             ;
-0060   8037 BD 80 5F    COPY                jsr     RCHAR         ;Load acc. A with code
-0061   803A A7 00                           staa    $00,x         ;Store acc. A into RAM code
-0062   803C 08                              inx
-0063   803D A7 00                           staa    $00,x         ;Peek for end of instruction marker
-0064   803F 81 F0                           cmpa    #$F0
-0065   8041 26 F4                           bne     COPY
-0066   8043             ;
-0067   8043 CC 00 00                        ldd     #$0000
-0068   8046 CE 00 00                        ldx     #$0000
-0069   8049 CD CE 00 00                     ldy     #$0000
-0070   804D             ;
-0071   804D 9D 57                           jsr     RAM_CODE      ;Run the code copied into RAM
-0072   804F             ;
-0073   804F BD 80 82                        jsr     PDONE         ;Print "DONE" to the serial
-0074   8052             ;
-0075   8052 20 FE       INFLOOP             bra     INFLOOP
-0076   8054             ;Print a char out the serial port
-0077   8054 36          PCHAR               psha                ;save A
-0078   8055 96 11       PCHAR1              ldaa    SCI_SCR     ;get comms status ;clears the TDRE bit
-0079   8057 84 20                           anda    #$20        ;mask for tdre bit
-0080   8059 27 FA                           beq     PCHAR1      ;wait till empty
-0081   805B 32                              pula                ;restore A
-0082   805C 97 13                           staa    txbuff      ;send it
-0083   805E 39                              rts
-0084   805F             ;
-0085   805F             ;Read a char from the serial port
-0086   805F 96 11       RCHAR               ldaa    SCI_SCR     ;get comms status ;clears the RDRF bit?
-0087   8061 84 80                           anda    #$80        ;mask for rdrf bit
-0088   8063 27 FA                           beq     RCHAR       ;wait till full
-0089   8065 96 12                           ldaa    rxbuff      ;read it
-0090   8067 39                              rts                 ;the byte is now in acc. A
-0091   8068             ;
-0092   8068             ;Print a string out the serial port; expect start address of string in reg. D
-0093   8068 3C          PSTR                pshx                ;Chuck ind. X onto the stack
-0094   8069 1A                              xgdx                ;ind. X now has the string address
-0095   806A 3C                              pshx
-0096   806B A6 00       PSTRLOOP            ldaa    $00,x       ;Load acc. A with data at address in X
-0097   806D 81 00                           cmpa    #$00
-0098   806F 27 06                           beq     PSTRDONE    ;If acc. A is zero (our "null byte")
-0099   8071 BD 80 54                        jsr     PCHAR       ;Print the char
-0100   8074 08                              inx                 ;Increment X to the next byte
-0101   8075 20 F4                           bra     PSTRLOOP    ;loop
-0102   8077 38          PSTRDONE            pulx                ;restore acc. D
-0103   8078 1A                              xgdx
-0104   8079 38                              pulx                ;restore ind. X
-0105   807A 39                              rts                 ;return
-0106   807B             ;
-0107   807B             ;Print the string READY to serial
-0108   807B CC 80 16    PREADY              ldd     #READYSTR   ;Point to start of "READY" string
-0109   807E BD 80 68                        jsr     PSTR        ;Print string routine
-0110   8081 39                              rts
-0111   8082             ;
-0112   8082             ;Print the string DONE to serial
-0113   8082 CC 80 1C    PDONE               ldd     #DONESTR    ;Point to start of "READY" string
-0114   8085 BD 80 68                        jsr     PSTR        ;Print string routine
-0115   8088 39                              rts
-0116   8089             ;
-0117   8089             ;Clear accumulators
-0118   8089 4F          CLRACC              clra
-0119   808A 5F                              clrb
-0120   808B 39                              rts
-0121   808C             ;
-0122   808C             ;ISRs
-0123   808C 20 FE       sci_tr              bra     sci_tr
-0124   808E 20 FE       tof_tr              bra     tof_tr
-0125   8090 20 FE       ocf_tr              bra     ocf_tr
-0126   8092 20 FE       icf_tr              bra     icf_tr
-0127   8094 20 FE       irq_tr              bra     irq_tr
-0128   8096 20 FE       swi_tr              bra     swi_tr
-0129   8098 20 FE       nmi_tr              bra     nmi_tr
-0130   809A             ;
-0131   809A             ; Interrupt Vectors
-0132   FFF0                                 .org     $fff0
-0133   FFF0             ;
-0134   FFF0 80 8C                           .word    sci_tr
-0135   FFF2 80 8E                           .word    tof_tr
-0136   FFF4 80 90                           .word    ocf_tr
-0137   FFF6 80 92                           .word    icf_tr
-0138   FFF8 80 94                           .word    irq_tr
-0139   FFFA 80 96                           .word    swi_tr
-0140   FFFC 80 98                           .word    nmi_tr
-0141   FFFE 80 21                           .word    ENTRYPOINT
-0142   10000                                 .end
+0031   8000                                 .org    start
+0032   8000             :
+0033   8000             ; Strings
+0034   8000 0A 4A 41 4E HELLOSTR            .text   "\nJANE HACKER 2022 <3\n"
+0034   8004 45 20 48 41 
+0034   8008 43 4B 45 52 
+0034   800C 20 32 30 32 
+0034   8010 32 20 3C 33 
+0034   8014 0A 
+0035   8015 00                              .byte   $00
+0036   8016 52 45 41 44 READYSTR            .text   "READY"
+0036   801A 59 
+0037   801B 00                              .byte   $00
+0038   801C 44 4F 4E 45 DONESTR             .text   "DONE"
+0039   8020 00                              .byte   $00
+0040   8021             ;
+0041   8021             ;Code
+0042   8021 8E 01 BF    ENTRYPOINT          lds     #STACK        ;setup the stack pointer
+0043   8024             ;
+0044   8024 86 C0                           ldaa    #$C0          ;to RAM enable
+0045   8026 97 14                           staa    ram_ctrl      ;enable RAM
+0046   8028             ;
+0047   8028 86 07                           ldaa    #$07          ;
+0048   802A 97 10                           staa    SCI_BAUD
+0049   802C 86 0A                           ldaa    #$0A          ;set acc. A to TE (Transmit Enable) and RE (Recieve Enable) bit in SCI_SCR
+0050   802E 97 11                           staa    SCI_SCR       ;enable transmitter and reciever
+0051   8030             ;
+0052   8030 4F                              clra                  ;Clear acc. A
+0053   8031             ;
+0054   8031 CE 00 57    COPYINIT            ldx     #RAM_CODE     ;Put start addr. of code in RAM into X
+0055   8034             ;
+0056   8034 BD 80 7B                        jsr     PREADY        ;Print "READY" to serial
+0057   8037             ;
+0058   8037 BD 80 5F    COPY                jsr     RCHAR         ;Load acc. A with code
+0059   803A A7 00                           staa    $00,x         ;Store acc. A into RAM code
+0060   803C 08                              inx
+0061   803D A7 00                           staa    $00,x         ;Peek for end of instruction marker
+0062   803F 81 FF                           cmpa    #$FF
+0063   8041 26 F4                           bne     COPY
+0064   8043             ;
+0065   8043 CC 00 00                        ldd     #$0000
+0066   8046 CE 00 00                        ldx     #$0000
+0067   8049 CD CE 00 00                     ldy     #$0000
+0068   804D             ;
+0069   804D 9D 57                           jsr     RAM_CODE      ;Run the code copied into RAM
+0070   804F             ;
+0071   804F BD 80 82                        jsr     PDONE         ;Print "DONE" to the serial
+0072   8052             ;
+0073   8052 20 FE       INFLOOP             bra     INFLOOP
+0074   8054             ;Print a char out the serial port
+0075   8054 36          PCHAR               psha                ;save A
+0076   8055 96 11       PCHAR1              ldaa    SCI_SCR     ;get comms status ;clears the TDRE bit
+0077   8057 84 20                           anda    #$20        ;mask for tdre bit
+0078   8059 27 FA                           beq     PCHAR1      ;wait till empty
+0079   805B 32                              pula                ;restore A
+0080   805C 97 13                           staa    txbuff      ;send it
+0081   805E 39                              rts
+0082   805F             ;
+0083   805F             ;Read a char from the serial port
+0084   805F 96 11       RCHAR               ldaa    SCI_SCR     ;get comms status ;clears the RDRF bit?
+0085   8061 84 80                           anda    #$80        ;mask for rdrf bit
+0086   8063 27 FA                           beq     RCHAR       ;wait till full
+0087   8065 96 12                           ldaa    rxbuff      ;read it
+0088   8067 39                              rts                 ;the byte is now in acc. A
+0089   8068             ;
+0090   8068             ;Print a string out the serial port; expect start address of string in reg. D
+0091   8068 3C          PSTR                pshx                ;Chuck ind. X onto the stack
+0092   8069 1A                              xgdx                ;ind. X now has the string address
+0093   806A 3C                              pshx
+0094   806B A6 00       PSTRLOOP            ldaa    $00,x       ;Load acc. A with data at address in X
+0095   806D 81 00                           cmpa    #$00
+0096   806F 27 06                           beq     PSTRDONE    ;If acc. A is zero (our "null byte")
+0097   8071 BD 80 54                        jsr     PCHAR       ;Print the char
+0098   8074 08                              inx                 ;Increment X to the next byte
+0099   8075 20 F4                           bra     PSTRLOOP    ;loop
+0100   8077 38          PSTRDONE            pulx                ;restore acc. D
+0101   8078 1A                              xgdx
+0102   8079 38                              pulx                ;restore ind. X
+0103   807A 39                              rts                 ;return
+0104   807B             ;
+0105   807B             ;Print the string READY to serial
+0106   807B CC 80 16    PREADY              ldd     #READYSTR   ;Point to start of "READY" string
+0107   807E BD 80 68                        jsr     PSTR        ;Print string routine
+0108   8081 39                              rts
+0109   8082             ;
+0110   8082             ;Print the string DONE to serial
+0111   8082 CC 80 1C    PDONE               ldd     #DONESTR    ;Point to start of "READY" string
+0112   8085 BD 80 68                        jsr     PSTR        ;Print string routine
+0113   8088 39                              rts
+0114   8089             ;
+0115   8089             ;Clear accumulators
+0116   8089 4F          CLRACC              clra
+0117   808A 5F                              clrb
+0118   808B 39                              rts
+0119   808C             ;
+0120   808C             ;ISRs
+0121   808C 20 FE       sci_tr              bra     sci_tr
+0122   808E 20 FE       tof_tr              bra     tof_tr
+0123   8090 20 FE       ocf_tr              bra     ocf_tr
+0124   8092 20 FE       icf_tr              bra     icf_tr
+0125   8094 20 FE       irq_tr              bra     irq_tr
+0126   8096 20 FE       swi_tr              bra     swi_tr
+0127   8098 20 FE       nmi_tr              bra     nmi_tr
+0128   809A             ;
+0129   809A             ; Interrupt Vectors
+0130   FFF0                                 .org     $fff0
+0131   FFF0             ;
+0132   FFF0 80 8C                           .word    sci_tr
+0133   FFF2 80 8E                           .word    tof_tr
+0134   FFF4 80 90                           .word    ocf_tr
+0135   FFF6 80 92                           .word    icf_tr
+0136   FFF8 80 94                           .word    irq_tr
+0137   FFFA 80 96                           .word    swi_tr
+0138   FFFC 80 98                           .word    nmi_tr
+0139   FFFE 80 21                           .word    ENTRYPOINT
+0140   10000                                 .end
 # tasm: Number of errors = 0

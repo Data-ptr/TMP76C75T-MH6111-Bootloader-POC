@@ -9,11 +9,8 @@
     JANE HACKER 2022 <3
     DONE
 */
-#include <SoftwareSerial.h>
 
 #define RST_PIN 9
-
-SoftwareSerial mySerial(10, 11); // RX, TX
 
 unsigned char readyChk[5] = {0, 0, 0, 0, 0};
 uint8_t rCIndex = 0;
@@ -22,10 +19,10 @@ bool isReady = false;
 
 void setup() {
   pinMode(RST_PIN, OUTPUT);
-  digitalWrite(RST_PIN, HIGH);
-  
+  digitalWrite(RST_PIN, LOW);
+
   // Open serial communications and wait for port to open:
-  Serial.begin(57600);
+  Serial.begin(230400);
 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -33,21 +30,15 @@ void setup() {
 
   Serial.println("ReAdY!");
 
-  mySerial.begin(15625); //"Weird"  76C75T speed
+  Serial1.begin(488);
 
-  delay(1000); //Give USB serial time to connect
   resetMpu();
 }
 
 //Waits for "READY" over rx then dumps code over tx
 void loop() {
-  if (mySerial.available()) {
-    char readByte = mySerial.read();
-
-    if(isReady) {
-      String str = String((uint8_t)readByte, HEX);
-      Serial.println("0x" + str + "(" + readByte + ")");
-    }
+  if (Serial1.available()) {
+    char readByte = Serial1.read();
 
     if(!isReady) {
       readyChk[rCIndex] = readByte;
@@ -61,41 +52,88 @@ void loop() {
         }
       }
     }
+
+    if(isReady) {
+      String str = String((uint8_t)readByte, HEX);
+      
+      if(1 == str.length()) {
+        str = "0" + str;
+      }
+      
+      //Serial.println("0x" + str);
+      Serial.println("0x" + str + "(" + readByte + ")");
+    }
   }
 }
 
 //Writes the code to serial to be stored in RAM to be run
 void writeCode() {
-  char data[17] = {
-    0xCC,
-    0x00, //divisor hi
-    0xFF, //divisor lo
-    0x15,
-    0x02, //dividen
-    0xBD,
-    0x80,
-    0x54,
-    0x17,
-    0xBD,
-    0x80,
-    0x54,
-    0x07,
-    0xBD,
-    0x80,
-    0x54,
-    0xF0
+  char data[44] = {
+0x86,
+0x01,
+0xBD,
+0x80,
+0x54,
+0xCC,
+0xFE,
+0x50,
+0xDD,
+0x40,
+0xCC,
+0x00,
+0x00,
+0xCD,
+0xCE,
+0x00,
+0x00,
+0xCE,
+0x00,
+0x40,
+0xCD,
+0x08,
+0x13,
+0x00,
+0x40,
+0x07,
+0xBD,
+0x80,
+0x54,
+0x08,
+0x08,
+0xCD,
+0x8C,
+0x00,
+0x05,
+0x25,
+0xEF,
+0x86,
+0x01,
+0xBD,
+0x80,
+0x54,
+0x39,
+
+0xFF
   };
 
   delay(10);
 
-  for(int i = 0; i < 17; i++) {
+  int i = 0;
+
+  while(i < 44) {
     delay(10);
-    mySerial.write(data[i]);
+    Serial1.write(data[i]);
+    
+    if(0xFF == data[i]) {
+      break;
+    }
+
+    i++;
   }
 }
 
 void resetMpu() {
   digitalWrite(RST_PIN, LOW);
-  delay(100);  //Hold RST LOW for 100ms
+  delay(10);  //Hold RST LOW for 100ms
   digitalWrite(RST_PIN, HIGH);
 }
