@@ -1,0 +1,105 @@
+0001   0000             ; Run in Mode 2, Multiplexed/RAM/No ROM, P20: L, P21: H, P22: L
+0002   0000             ;
+0003   0000                                 .msfirst
+0004   0000             ;
+0005   0000             ;RAM
+0006   0000             RAM_BBU_BOT         .equ    $0040       ;The bottom of "Battery Backup" RAM
+0007   0000             RAM_VIO_BOT         .equ    $0057       ;The bottom of "violate" RAM
+0008   0000             RAM_VIO_TOP         .equ    $01BF       ;The top of "violate" RAM
+0009   0000             ;
+0010   0000             ;Subroutines in ROM
+0011   0000             PCHAR               .equ    $8054
+0012   0000             RCHAR               .equ    $805F
+0013   0000             PSTR                .equ    $8068
+0014   0000             CLRACC              .equ    $8089
+0015   0000             ;
+0016   0000             START               .equ    RAM_VIO_BOT
+0017   0000             ;
+0018   0057                                 .org    START
+0019   0057 7E 00 62                        jmp     IDOVTEST
+0020   005A BD 80 54    PDIV_RESULT         jsr     PCHAR         ;acc. A has remainder
+0021   005D 17                              tba                   ;acc. B has result
+0022   005E BD 80 54                        jsr     PCHAR
+0023   0061 39                              rts
+0024   0062                                 ;
+0025   0062 CC 00 02    IDOVTEST            ldd     #$0002
+0026   0065 DD 40                           std     RAM_BBU_BOT
+0027   0067 CC 00 01                        ldd     #$0001
+0028   006A 14 40                           idiv    #RAM_BBU_BOT  ;1/2 = 0x01, r=0x00, CC=0xD1
+0029   006C 9D 5A                           jsr     PDIV_RESULT
+0030   006E CC 00 01                        ldd     #$0001
+0031   0071 14 40                           idiv    #RAM_BBU_BOT
+0032   0073 07                              tpa                   ;dump condition codes to acc. A
+0033   0074 BD 80 54                        jsr     PCHAR
+0034   0077                                 ;
+0035   0077                                 ;0x00(0036   0077                                 ;0x01()
+0037   0077                                 ;0xd1(⸮)
+0038   0077                                 ;
+0039   0077 CC 00 01                        ldd     #$0001
+0040   007A DD 40                           std     RAM_BBU_BOT
+0041   007C CC 00 02                        ldd     #$0002
+0042   007F 14 40                           idiv    #RAM_BBU_BOT  ;2/1 = 0x02, r=0x00, CC=0xD1
+0043   0081 9D 5A                           jsr     PDIV_RESULT
+0044   0083 CC 00 02                        ldd     #$0002
+0045   0086 14 40                           idiv    #RAM_BBU_BOT
+0046   0088 07                              tpa                   ;dump condition codes to acc. A
+0047   0089 BD 80 54                        jsr     PCHAR
+0048   008C                                 ;
+0049   008C                                 ;0x00(0050   008C                                 ;0x02()
+0051   008C                                 ;0xd1(⸮)
+0052   008C                                 ;
+0053   008C CC 00 00                        ldd     #$0000
+0054   008F DD 40                           std     RAM_BBU_BOT
+0055   0091 CC 00 01                        ldd     #$0001
+0056   0094 14 40                           idiv    #RAM_BBU_BOT  ;1/0 = 0x01, r=0x00, CC=0xD1
+0057   0096 9D 5A                           jsr     PDIV_RESULT
+0058   0098 CC 00 01                        ldd     #$0001
+0059   009B 14 40                           idiv    #RAM_BBU_BOT
+0060   009D 07                              tpa                   ;dump condition codes to acc. A
+0061   009E BD 80 54                        jsr     PCHAR
+0062   00A1                                 ;
+0063   00A1                                 ;0x00(0064   00A1                                 ;0x01()
+0065   00A1                                 ;0xd1(⸮)
+0066   00A1                                 ;
+0067   00A1 CC 00 01                        ldd     #$0001
+0068   00A4 DD 40                           std     RAM_BBU_BOT
+0069   00A6 CC 00 00                        ldd     #$0000
+0070   00A9 14 40                           idiv    #RAM_BBU_BOT  ;0/1 = 0x00, r=0x00, CC=0xD5
+0071   00AB 9D 5A                           jsr     PDIV_RESULT
+0072   00AD CC 00 00                        ldd     #$0000
+0073   00B0 14 40                           idiv    #RAM_BBU_BOT
+0074   00B2 07                              tpa                   ;dump condition codes to acc. A
+0075   00B3 BD 80 54                        jsr     PCHAR
+0076   00B6                                 ;
+0077   00B6                                 ;0x00(0078   00B6                                 ;0x00(0079   00B6                                 ;0xd5(⸮)
+0080   00B6                                 ;
+0081   00B6 CC FF FF                        ldd     #$FFFF
+0082   00B9 DD 40                           std     RAM_BBU_BOT
+0083   00BB CC 00 01                        ldd     #$0001
+0084   00BE 14 40                           idiv    #RAM_BBU_BOT  ;1/FF = 0x00, r=0x01, CC=0xD0
+0085   00C0 9D 5A                           jsr     PDIV_RESULT
+0086   00C2 CC 00 01                        ldd     #$0001
+0087   00C5 14 40                           idiv    #RAM_BBU_BOT
+0088   00C7 07                              tpa                   ;dump condition codes to acc. A
+0089   00C8 BD 80 54                        jsr     PCHAR
+0090   00CB                                 ;
+0091   00CB                                 ;0x01()
+0092   00CB                                 ;0x00(0093   00CB                                 ;0xd0(⸮)
+0094   00CB                                 ;
+0095   00CB CC 00 01                        ldd     #$0001
+0096   00CE DD 40                           std     RAM_BBU_BOT
+0097   00D0 CC FF FF                        ldd     #$FFFF
+0098   00D3 14 40                           idiv    #RAM_BBU_BOT  ;FF/1 = 0xFF, r=0xFF, CC=0xD1
+0099   00D5 9D 5A                           jsr     PDIV_RESULT
+0100   00D7 CC 00 FF                        ldd     #$00FF
+0101   00DA 14 40                           idiv    #RAM_BBU_BOT
+0102   00DC 07                              tpa                   ;dump condition codes to acc. A
+0103   00DD BD 80 54                        jsr     PCHAR
+0104   00E0                                 ;
+0105   00E0                                 ;0xff(⸮)
+0106   00E0                                 ;0xff(⸮)
+0107   00E0                                 ;0xd1(⸮)
+0108   00E0                                 ;
+0109   00E0 39                              rts
+0110   00E1                                 .end
+# tasm: Number of errors = 0

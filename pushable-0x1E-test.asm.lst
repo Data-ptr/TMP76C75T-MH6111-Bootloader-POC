@@ -1,0 +1,51 @@
+0001   0000             ; Run in Mode 2, Multiplexed/RAM/No ROM, P20: L, P21: H, P22: L
+0002   0000             ;
+0003   0000             ;Current theory 0x1E is 2-bytes CPD ind,X perhaps
+0004   0000             ;
+0005   0000                                 .msfirst
+0006   0000             ;
+0007   0000             ;RAM
+0008   0000             RAM_BBU_BOT         .equ    $0040       ;The bottom of "Battery Backup" RAM
+0009   0000             RAM_BBU_TOP         .equ    $0056       ;The top of "Battery Backup" RAM
+0010   0000             RAM_VIO_BOT         .equ    $0057       ;The bottom of "violate" RAM
+0011   0000             RAM_VIO_TOP         .equ    $01BF       ;The top of "violate" RAM
+0012   0000             ;
+0013   0000             
+0014   0000             ;
+0015   0000             ;Subroutines in ROM
+0016   0000             PCHAR               .equ    $8054
+0017   0000             RCHAR               .equ    $805F
+0018   0000             PSTR                .equ    $8068
+0019   0000             CLRACC              .equ    $8089
+0020   0000             ;
+0021   0000             START               .equ    RAM_VIO_BOT
+0022   0000             ;
+0023   0057                                 .org    START
+0024   0057 CE 00 40    CLR_RAM             ldx     #RAM_BBU_BOT
+0025   005A 86 00                           ldaa    #$00
+0026   005C A7 00       CLR_RAM_LOOP        staa    $00,x
+0027   005E 08                              inx
+0028   005F 8C 00 56                        cpx     #RAM_BBU_TOP
+0029   0062 23 F8                           bls     CLR_RAM_LOOP
+0030   0064                                 ;
+0031   0064 86 01                           ldaa    #$01         ;marker
+0032   0066 BD 80 54                        jsr     PCHAR
+0033   0069                                 ;
+0034   0069 CC 55 55    INST_TEST           ldd     #$5555
+0035   006C DD 40                           std     RAM_BBU_BOT
+0036   006E CE 00 40                        ldx     #RAM_BBU_BOT
+0037   0071 CD CE 00 00                     ldy     #$0000       ;Counter
+0038   0075 1E 00       TEST_LOOP           .byte   $1E, $00
+0039   0077 07                              tpa
+0040   0078 BD 80 54                        jsr     PCHAR
+0041   007B CC AA AA                        ldd     #$AAAA
+0042   007E CD 08                           iny
+0043   0080 CD 8C 00 02                     cmpy    #$0002       ;y++?
+0044   0084 25 EF                           bcs     TEST_LOOP
+0045   0086                                 ;
+0046   0086 86 01                           ldaa    #$01         ;marker
+0047   0088 BD 80 54                        jsr     PCHAR
+0048   008B                                 ;
+0049   008B 39                              rts
+0050   008C                                 .end
+# tasm: Number of errors = 0

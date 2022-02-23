@@ -1,6 +1,6 @@
 ; Run in Mode 2, Multiplexed/RAM/No ROM, P20: L, P21: H, P22: L
 ;
-;Current theory 0x13 is 3-bytes STR offset,X,immediate (indexed by X)
+;Current theory 0x12 is 3-bytes AIM offset,X,immediate (indexed by X)
 ;
                     .msfirst
 ;
@@ -21,31 +21,35 @@ CLRACC              .equ    $8089
 START               .equ    RAM_VIO_BOT
 ;
                     .org    START
-                    ldx     #RAM_BBU_BOT
-CLR_RAM             staa    $00,x
+CLR_RAM             ldx     #RAM_BBU_BOT
+                    ldaa    #$55
+CLR_RAM_LOOP        staa    $00,x
                     inx
                     cpx     #RAM_BBU_TOP
-                    bls     CLR_RAM
+                    bls     CLR_RAM_LOOP
+                    ;
                     ldaa    #$01         ;marker
                     jsr     PCHAR
-INST_TEST           ldd     #$0000
-                    ldy     #$0000       ;Using Y as a loop counter
-                    ldx     #RAM_BBU_BOT
-CLR_N_TEST          iny
-                    .byte   $13, $00, $55
-                    tpa
-                    jsr     PCHAR
+                    ;
+INST_TEST           ldy     #$0000       ;Using Y as a loop counter
+                    ldx     #$0040
+TEST_LOOP           ldd     #$0000
+                    iny
+                    .byte   $12, $00, $00
+                    ;
                     inx
-                    ;inx
-                    cmpy    #$0016       ;Finish after three loops
-                    bcs     CLR_N_TEST
+                    ;
+                    cpy     #$0016       ;Finish after three loops
+                    bcs     TEST_LOOP
+                    ;
                     ldaa    #$01         ;marker
                     jsr     PCHAR
-                    ldx     #RAM_BBU_BOT
-DUMP_MEM            ldaa    $00,x
+                    ;
+DUMP_MEM            ldx     #RAM_BBU_BOT
+DUMP_MEM_LOOP       ldaa    $00,x
                     jsr     PCHAR
                     inx
                     cpx     #RAM_BBU_TOP
-                    bls     DUMP_MEM
+                    bls     DUMP_MEM_LOOP
                     rts
                     .end
