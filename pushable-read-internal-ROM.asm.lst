@@ -11,25 +11,28 @@
 0011   0000             RAM_VIO_TOP         .equ    $01BF       ;The top of "violate" RAM
 0012   0000             ;
 0013   0000             ;Subroutines in ROM
-0014   0000             PCHAR               .equ    $8054
-0015   0000             RCHAR               .equ    $805F
-0016   0000             PSTR                .equ    $8068
-0017   0000             CLRACC              .equ    $8089
-0018   0000             ;
-0019   0000             ;Internal ROM
-0020   0000             INT_ROM             .equ    $D000
-0021   0000             ;
-0022   0000             START               .equ    RAM_VIO_BOT
-0023   0000             ;
-0024   0057                                 .org    START
-0025   0057 86 04                           ldaa    #$04       ;baud = E/16, async ;0x07 = baud = E/4096, async
-0026   0059 97 10                           staa    SCI_BAUD
-0027   005B CE D0 00    DUMP                ldx     #INT_ROM   ;X = start of internal rom
-0028   005E A6 00       DUMP1               ldaa    0,x        ;get byte
-0029   0060 BD 80 54                        jsr     PCHAR
-0030   0063 08                              inx
-0031   0064 8C 00 00                        cpx     #$0000     ;Dumps 0xFFFF, then wraps, detect that
-0032   0067 26 F5                           bne     DUMP1
-0033   0069 39                              rts
-0034   006A                                 .end
+0014   0000             PCHAR               .equ    $8021
+0015   0000             RCHAR               .equ    $802C
+0016   0000             PSTR                .equ    $8035
+0017   0000             PDONE               .equ    $804F
+0018   0000             CLRACC              .equ    $8056
+0019   0000             ;
+0020   0000             ;Internal ROM
+0021   0000             INT_ROM             .equ    $D000
+0022   0000             ;
+0023   0000             START               .equ    RAM_VIO_BOT
+0024   0000             ;
+0025   0057                                 .org    START
+0026   0057 86 05                           ldaa    #$05
+0027   0059 97 10                           staa    SCI_BAUD
+0028   005B CE D0 00    DUMP                ldx     #INT_ROM   ;X = start of internal rom
+0029   005E A6 00       DUMP1               ldaa    0,x        ;get byte
+0030   0060 BD 80 21                        jsr     PCHAR
+0031   0063 08                              inx
+0032   0064 8C 00 00                        cpx     #$0000     ;Dumps 0xFFFF, then wraps, detect that
+0033   0067 26 F5                           bne     DUMP1
+0034   0069 BD 80 4F                        jsr     PDONE
+0035   006C 20 FE       INFLOOP             bra     INFLOOP
+0036   006E 39                              rts
+0037   006F                                 .end
 # tasm: Number of errors = 0

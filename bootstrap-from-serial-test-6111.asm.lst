@@ -139,41 +139,40 @@
 0133   8094 A7 00                           staa    $00,x         ;Store acc. A into RAM code
 0134   8096 08                              inx
 0135   8097 A7 00                           staa    $00,x         ;Peek for end of instruction marker
-0136   8099 81 FE                           cmpa    #$FE
+0136   8099 81 FF                           cmpa    #$FF
 0137   809B 26 F4                           bne     COPY
-0138   809D                                 ;
-0139   809D             ;Wait for MCU to be ready
-0140   809D                                 ;loop until ready signal recieved
-0141   809D BD 80 2C    RDYLOOP             jsr     RCHAR       ;read in character
-0142   80A0 91 FF                           cmpa    $FF         ;is it 0xFF?
-0143   80A2 25 F9                           bcs     RDYLOOP     ;if CHAR - 0xFF <, loop
-0144   80A4 BD 80 21                        jsr     PCHAR       ;echo
-0145   80A7                                 ;
-0146   80A7 CC 00 00                        ldd     #$0000
-0147   80AA CE 00 00                        ldx     #$0000
-0148   80AD CD CE 00 00                     ldy     #$0000
-0149   80B1                                 ;
-0150   80B1 7E 00 57    READY               jmp     RAM_CODE      ;Run the code copied into RAM
-0151   80B4             ;
-0152   80B4             ;ISRs
-0153   80B4 20 FE       sci_tr              bra     sci_tr
-0154   80B6 20 FE       tof_tr              bra     tof_tr
-0155   80B8 20 FE       ocf_tr              bra     ocf_tr
-0156   80BA 20 FE       icf_tr              bra     icf_tr
-0157   80BC 20 FE       irq_tr              bra     irq_tr
-0158   80BE 20 FE       swi_tr              bra     swi_tr
-0159   80C0 20 FE       nmi_tr              bra     nmi_tr
-0160   80C2             ;
-0161   80C2             ;Interrupt Vectors
-0162   FFF0                                 .org     $FFF0
-0163   FFF0                                 ;
-0164   FFF0 80 B4                           .word    sci_tr
-0165   FFF2 80 B6                           .word    tof_tr
-0166   FFF4 80 B8                           .word    ocf_tr
-0167   FFF6 80 BA                           .word    icf_tr
-0168   FFF8 80 BC                           .word    irq_tr
-0169   FFFA 80 BE                           .word    swi_tr
-0170   FFFC 80 C0                           .word    nmi_tr
-0171   FFFE 80 6E                           .word    ENTRYPOINT
-0172   10000                                 .end
+0138   809D             ;Wait for MCU to be ready
+0139   809D                                 ;loop until ready signal recieved
+0140   809D BD 80 2C    RDYLOOP             jsr     RCHAR       ;read in character
+0141   80A0 91 FF                           cmpa    $FF         ;is it 0xFF?
+0142   80A2 25 F9                           bcs     RDYLOOP     ;if CHAR - 0xFF <, loop
+0143   80A4 BD 80 21                        jsr     PCHAR       ;echo
+0144   80A7                                 ;
+0145   80A7 CC 00 00                        ldd     #$0000
+0146   80AA CE 00 00                        ldx     #$0000
+0147   80AD CD CE 00 00                     ldy     #$0000
+0148   80B1             ;Run the code copied into RAM
+0149   80B1 7E 00 57    READY               jmp     RAM_CODE
+0150   80B4             ;
+0151   80B4             ;ISRs
+0152   80B4 20 FE       sci_tr              bra     sci_tr
+0153   80B6 20 FE       tof_tr              bra     tof_tr
+0154   80B8 20 FE       ocf_tr              bra     ocf_tr
+0155   80BA 20 FE       icf_tr              bra     icf_tr
+0156   80BC 20 FE       irq_tr              bra     irq_tr
+0157   80BE 20 FE       swi_tr              bra     swi_tr
+0158   80C0 20 FE       nmi_tr              bra     nmi_tr
+0159   80C2             ;
+0160   80C2             ;Interrupt Vectors
+0161   FFF0                                 .org     $FFF0
+0162   FFF0                                 ;
+0163   FFF0 80 B4                           .word    sci_tr
+0164   FFF2 80 B6                           .word    tof_tr
+0165   FFF4 80 B8                           .word    ocf_tr
+0166   FFF6 80 BA                           .word    icf_tr
+0167   FFF8 80 BC                           .word    irq_tr
+0168   FFFA 80 BE                           .word    swi_tr
+0169   FFFC 80 C0                           .word    nmi_tr
+0170   FFFE 80 6E                           .word    ENTRYPOINT
+0171   10000                                 .end
 # tasm: Number of errors = 0

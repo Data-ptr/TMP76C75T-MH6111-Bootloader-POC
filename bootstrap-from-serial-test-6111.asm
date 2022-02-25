@@ -133,7 +133,7 @@ COPY                jsr     RCHAR         ;Load acc. A with code
                     staa    $00,x         ;Store acc. A into RAM code
                     inx
                     staa    $00,x         ;Peek for end of instruction marker
-                    cmpa    #$FE
+                    cmpa    #$FF
                     bne     COPY
 ;Wait for MCU to be ready
                     ;loop until ready signal recieved

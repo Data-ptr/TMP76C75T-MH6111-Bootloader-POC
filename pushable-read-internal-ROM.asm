@@ -11,10 +11,11 @@ RAM_VIO_BOT         .equ    $0057       ;The bottom of "violate" RAM
 RAM_VIO_TOP         .equ    $01BF       ;The top of "violate" RAM
 ;
 ;Subroutines in ROM
-PCHAR               .equ    $8054
-RCHAR               .equ    $805F
-PSTR                .equ    $8068
-CLRACC              .equ    $8089
+PCHAR               .equ    $8021
+RCHAR               .equ    $802C
+PSTR                .equ    $8035
+PDONE               .equ    $804F
+CLRACC              .equ    $8056
 ;
 ;Internal ROM
 INT_ROM             .equ    $D000
@@ -22,7 +23,7 @@ INT_ROM             .equ    $D000
 START               .equ    RAM_VIO_BOT
 ;
                     .org    START
-                    ldaa    #$04       ;baud = 125000, async
+                    ldaa    #$05
                     staa    SCI_BAUD
 DUMP                ldx     #INT_ROM   ;X = start of internal rom
 DUMP1               ldaa    0,x        ;get byte
@@ -30,5 +31,7 @@ DUMP1               ldaa    0,x        ;get byte
                     inx
                     cpx     #$0000     ;Dumps 0xFFFF, then wraps, detect that
                     bne     DUMP1
+                    jsr     PDONE
+INFLOOP             bra     INFLOOP
                     rts
                     .end
